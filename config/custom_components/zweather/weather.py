@@ -35,40 +35,41 @@ def setup_platform(
     log.info("Adding ZWeather entity into Weather domain")
     coordinator: ZWeatherDataCoordinator = hass.data[DOMAIN]["coordinator"]
     add_entities([ZWeather(coordinator)])
+    add_entities([ZWeather(coordinator, is_hourly=False)])
 
 
 class ZWeather(CoordinatorEntity[ZWeatherDataCoordinator], WeatherEntity):
     """Z Weather entity."""
 
     _attr_attribution = "ZWeather"
-    _attr_name = "ZWeather"
+    # _attr_name = "ZWeather"
     _attr_has_entity_name = True
     _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_native_precipitation_unit = UnitOfPrecipitationDepth.MILLIMETERS
     _attr_native_pressure_unit = UnitOfPressure.HPA
     _attr_native_wind_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
 
-    def __init__(self, coordinator: ZWeatherDataCoordinator) -> None:
+    def __init__(
+        self, coordinator: ZWeatherDataCoordinator, is_hourly: bool = True
+    ) -> None:
         """Initialize ZWeather entity."""
-
         super().__init__(coordinator)
+        self._is_hourly = is_hourly
         log.info("__init()__ called on Zweather entity")
-
-    # @property
-    # def track_home(self) -> Any | bool:
-    #     """Return if we are tracking home."""
-    #     return self._config.get(CONF_TRACK_HOME, False)
 
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return "zweather"
+        if self._is_hourly is True:
+            return "zweather_hourly"
+        return "zweather_daily"
 
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        name = "zweather"
-        return name
+        if self._is_hourly is True:
+            return "Z-Weather Hourly"
+        return "Z-Weather Daily"
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -110,7 +111,14 @@ class ZWeather(CoordinatorEntity[ZWeatherDataCoordinator], WeatherEntity):
     @property
     def forecast(self) -> list[Forecast] | None:
         """Return the forecast array."""
-        return self.coordinator.data.hourly_forecast
+        result = self.coordinator.data.hourly_forecast
+        if self._is_hourly is False:
+            # Return daily data
+            result = self.coordinator.data.daily_forecast
+            log.info("Returning daily forecast")
+        else:
+            log.info("Returning hourly forecast")
+        return result
 
     @property
     def device_info(self) -> DeviceInfo:

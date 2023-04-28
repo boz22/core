@@ -121,10 +121,10 @@ class ZWeatherData:
         condition_dict = {}
         # add datetime with timezone information
         datetime_original = time_list[matching_index]
-        log.info(f"Original datetime as returned from dataset: {datetime_original}" )
+        log.info(f"Original datetime as returned from dataset: {datetime_original}")
 
         iso_date = datetime.fromisoformat(datetime_original)
-        #condition_dict["datetime"] = str(iso_date.astimezone().isoformat())
+        # condition_dict["datetime"] = str(iso_date.astimezone().isoformat())
         condition_dict["datetime"] = str(pytz.utc.localize(iso_date).isoformat())
         log.info(f"datetime after some conversion: {condition_dict['datetime']}")
 
@@ -143,6 +143,7 @@ class ZWeatherData:
         )
         condition_dict["cloudcover"] = cloudcover_list[matching_index]
         condition_dict["condition"] = self._compute_condition_string(condition_dict)
+        condition_dict["templow"] = 10
 
         return condition_dict
 
@@ -154,10 +155,24 @@ class ZWeatherData:
         """
         current_datetime = datetime.fromisoformat(current_datetime_str)
         result: list[dict] = []
-        for _i in range(24):
+        for _i in range(next_hours_count):
             current_datetime += timedelta(hours=1)
             datetime_str = current_datetime.isoformat()
             cond_dict = self._get_weather_for_datetime(data, datetime_str)
+            result.append(cond_dict)
+        return result
+
+    def _get_daily_forecast(
+        self, data: Dict[str, Any], current_datetime_str: str, next_days_count: int
+    ) -> list[dict]:
+        """Retrieve daily forecast for the next days."""
+        current_datetime = datetime.fromisoformat(current_datetime_str)
+        result: list[dict] = []
+        for _i in range(next_days_count):
+            current_datetime += timedelta(days=1)
+            datetime_str = current_datetime.isoformat()
+            cond_dict = self._get_weather_for_datetime(data, datetime_str)
+            cond_dict["templow"] = 10
             result.append(cond_dict)
         return result
 
@@ -169,13 +184,21 @@ class ZWeatherData:
             data, current_datetime
         )
         forecast_for_x_hours = 24
-        log.info(f"Retrieving hourly forecast for the next {forecast_for_x_hours}")
+        log.info(
+            f"Retrieving hourly forecast for the next {forecast_for_x_hours} hours"
+        )
         self.hourly_forecast = self._get_hourly_forecast(
             data, current_datetime, next_hours_count=forecast_for_x_hours
         )
 
+        forecast_for_x_days = 6
+        log.info(f"Retrieving daily forecast for the next {forecast_for_x_days} days")
+        self.daily_forecast = self._get_daily_forecast(
+            data, current_datetime, next_days_count=forecast_for_x_days
+        )
+
         log.info(str(self.current_weather_data))
-        log.info( str(self.hourly_forecast)  )
+        log.info(str(self.hourly_forecast))
 
     def _refresh_current_conditions(self, data_current_conditions):
         pass
