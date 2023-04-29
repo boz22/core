@@ -45,7 +45,7 @@ class ZWeatherData:
         # Datetime format: ISO 8601
         # Temperature: Celsius
         # Precipitation: mm
-        self._rest_endpoint = "https://api.open-meteo.com/v1/dwd-icon?latitude=45.69&longitude=21.24&hourly=temperature_2m,relativehumidity_2m,rain,showers,snowfall,cloudcover,windspeed_10m,winddirection_10m,surface_pressure"
+        self._rest_endpoint = "https://api.open-meteo.com/v1/dwd-icon?latitude=45.69&longitude=21.24&hourly=temperature_2m,relativehumidity_2m,rain,showers,snowfall,cloudcover_low,windspeed_10m,winddirection_10m,surface_pressure"
 
     def _get_current_datetime_iso(self):
         """Retrieve the current datetime in ISO 8601 format."""
@@ -116,7 +116,7 @@ class ZWeatherData:
         pressure_list = data["hourly"]["surface_pressure"]
         wind_speed_list = data["hourly"]["windspeed_10m"]
         wind_bearing_list = data["hourly"]["winddirection_10m"]
-        cloudcover_list = data["hourly"]["cloudcover"]
+        cloudcover_list = data["hourly"]["cloudcover_low"]
 
         condition_dict = {}
         # add datetime with timezone information
