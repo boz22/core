@@ -20,10 +20,18 @@ def _hourly_json():
     return data
 
 
+@pytest.fixture(name="daily_json")
+def _daily_json():
+    with open("test_daily.json", encoding="utf-8") as file:
+        content = file.read()
+        data = json.loads(content)
+    return data
+
+
 def test_data_fetch(zweather_data, hourly_json):
     mock_current_time = datetime.datetime(2023, 4, 21, 2, 24, 00).isoformat()
     zweather_data._get_current_datetime_iso = MagicMock(return_value=mock_current_time)
-    zweather_data._refresh_weather_data(hourly_json)
+    zweather_data._refresh_weather_data_hourly(hourly_json)
     current_data = zweather_data.current_weather_data
     assert current_data["datetime"] == "2023-04-21T02:00:00+00:00"
     assert current_data["temperature"] == 7.8
@@ -34,10 +42,19 @@ def test_data_fetch(zweather_data, hourly_json):
 def test_hourly_forecast(zweather_data, hourly_json):
     mock_current_time = datetime.datetime(2023, 4, 21, 2, 24, 00).isoformat()
     zweather_data._get_current_datetime_iso = MagicMock(return_value=mock_current_time)
-    zweather_data._refresh_weather_data(hourly_json)
+    zweather_data._refresh_weather_data_hourly(hourly_json)
     hourly_data = zweather_data.hourly_forecast
 
     assert hourly_data[2]["temperature"] == 7.3
     assert hourly_data[2]["wind_bearing"] == 345
     assert len(hourly_data) == 24
-    print(hourly_data)
+
+
+def test_daily_forecast(zweather_data, daily_json):
+    mock_current_time = datetime.datetime(2023, 5, 9, 2, 24, 00).isoformat()
+    zweather_data._get_current_datetime_iso = MagicMock(return_value=mock_current_time)
+    daily_data = zweather_data._get_daily_forecast(daily_json, mock_current_time)
+    assert daily_data[2]["condition"] == "rainy"
+    assert daily_data[2]["temperature"] == 15.9
+    assert daily_data[2]["templow"] == 9.8
+    assert daily_data[2]["precipitation"] == 5.00
